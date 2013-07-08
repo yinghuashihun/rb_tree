@@ -88,8 +88,6 @@ int main()
     int i, count = PATH_NUMBER;
     DATA_S    *pstData = NULL;
     RB_TREE_S *pstTree = NULL;
-    char*      aucPath[PATH_NUMBER];
-    char      *pPath = NULL;
     DATA_S     stData;
     unsigned int uiRet = 0;
     struct timeval stStart;
