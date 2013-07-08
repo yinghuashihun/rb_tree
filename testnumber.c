@@ -95,6 +95,7 @@ int main()
 
     memset(&stData, 0, sizeof(DATA_S));
 
+    /* ´´½¨ºìºÚÊ÷ */
     pstTree = RB_Init(KeyCompare, KeyFree);
 
     if (NULL == pstTree)
@@ -132,7 +133,6 @@ int main()
     printf("Area find the data number is %d use time:%f \r\n", count, 
            1000000*(stStop.tv_sec - stStart.tv_sec) + stStop.tv_usec - 
            stStart.tv_usec);
-
 
     stData.uidata = 999999;
     uiRet = RB_Erase(&(stData.stRbNode), pstTree);
