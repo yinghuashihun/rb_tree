@@ -488,12 +488,14 @@ unsigned int RB_Insert(RB_NODE_S *pstData, RB_TREE_S* pstTree)
     RB_NODE_S   *pstNode = NULL;
     unsigned int uiRet = RB_OPEAT_SUCCESS;
     int  iComRet = 0;
- 
+
+    /* 查找当前节点是否已经存在 */
     if ((pstNode = rb_Search_Auxiliary(pstData, pstTree, &pstParent)))
     {
         return RB_INSERT_EXITS;
     }
 
+    /* 新插入的节点颜色置为红色 */
     pstNode = pstData;
     pstNode->pstParent = pstParent; 
     pstNode->enColor = RED;
@@ -619,7 +621,14 @@ unsigned int RB_Erase(RB_NODE_S *pstData, RB_TREE_S *pstTree)
 
 }
 
+/* **********************************************************
+  * Function Name : RB_Init
+  * Description   : 实现红黑树的初始化，创建一个树
+  * Author        : Internet
+  * Input/OutPut  :
+  * Return        :
 
+********************************************************* */
 RB_TREE_S * RB_Init(RB_NODE_COMPARE pfCompare, RB_NODE_FREE pfFree)
 {
     RB_TREE_S *pstTree = NULL;
@@ -635,6 +644,14 @@ RB_TREE_S * RB_Init(RB_NODE_COMPARE pfCompare, RB_NODE_FREE pfFree)
     return pstTree;
 }
 
+/* **********************************************************
+  * Function Name : RB_DeInit
+  * Description   : 实现红黑树的去初始化释放所有的内存
+  * Author        : Internet
+  * Input/OutPut  :
+  * Return        :
+
+********************************************************* */
 void RB_DeInit(RB_TREE_S *pstTree)
 {
     if (NULL == pstTree->pstRoot)
