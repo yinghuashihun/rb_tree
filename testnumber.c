@@ -88,8 +88,6 @@ int main()
     int i, count = PATH_NUMBER;
     DATA_S    *pstData = NULL;
     RB_TREE_S *pstTree = NULL;
-    char*      aucPath[PATH_NUMBER];
-    char      *pPath = NULL;
     DATA_S     stData;
     unsigned int uiRet = 0;
     struct timeval stStart;
@@ -116,7 +114,7 @@ int main()
     gettimeofday(&stStart, NULL);  
     for (i = 1; i <= count; ++i)
     {
-       /* ²éÕÒÖ¸¶¨µÄÄ³Ò»¸ö */
+       /* ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ä³Ò»ï¿½ï¿½ */
        DataFindTree(pstTree, i);
     }
     gettimeofday(&stStop, NULL);
@@ -127,7 +125,7 @@ int main()
     gettimeofday(&stStart, NULL);  
     for (i = 1; i <= count; ++i)
     {
-       /* ²éÕÒÖ¸¶¨µÄÄ³Ò»¸ö */
+       /* ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ä³Ò»ï¿½ï¿½ */
        DataFind(100000-1);
     }
     gettimeofday(&stStop, NULL);
