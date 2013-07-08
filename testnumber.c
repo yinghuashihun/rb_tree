@@ -115,7 +115,7 @@ int main()
     gettimeofday(&stStart, NULL);  
     for (i = 1; i <= count; ++i)
     {
-       /* ²éÕÒÖ¸¶¨µÄÄ³Ò»¸ö */
+       /* ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ä³Ò»ï¿½ï¿½ */
        DataFindTree(pstTree, i);
     }
     gettimeofday(&stStop, NULL);
@@ -126,7 +126,7 @@ int main()
     gettimeofday(&stStart, NULL);  
     for (i = 1; i <= count; ++i)
     {
-       /* ²éÕÒÖ¸¶¨µÄÄ³Ò»¸ö */
+       /* ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½Ä³Ò»ï¿½ï¿½ */
        DataFind(100000-1);
     }
     gettimeofday(&stStop, NULL);
