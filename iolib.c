@@ -3,13 +3,13 @@
 ssize_t readn(int fd, void *vptr, size_t n )
 {
     size_t   nleft;
-    ssize_t    nread;
-    char   *ptr;
-    ptr=vptr;
-    nleft=n;
-    while ( nleft > 0 )
-   {
-      if ( ( nread = read ( fd,ptr,nleft ) ) < 0 )
+    ssize_t  nread;
+    char     *ptr = NULL;
+    ptr = vptr;
+    nleft = n;
+    while (nleft > 0)
+    {
+      if ((nread = read(fd, ptr, nleft )) < 0)
       {
           if ( errno == EINTR )
               nread = 0;
@@ -17,12 +17,14 @@ ssize_t readn(int fd, void *vptr, size_t n )
               return  -1 ;
       }
  
-      nleft-=nread;
-      ptr+=nread;
+      nleft -= nread;
+      ptr += nread;
+      
       if(nread > 0)
        break;
-   }
-   return ( n-nleft );
+    }
+
+    return (n - nleft);
 }
 
 
@@ -30,13 +32,13 @@ ssize_t writen(int fd, const void *vptr, size_t n)
 {
     size_t nleft;
     ssize_t nwritten;
-    const char *ptr;
+    const char *ptr = NULL;
     ptr = vptr;
     nleft = n;
     while (nleft > 0) 
-	{
-        if ( (nwritten = write(fd, ptr, nleft)) <= 0) 
-		{
+    {
+        if ((nwritten = write(fd, ptr, nleft)) <= 0) 
+        {
             if (nwritten < 0 && errno == EINTR)
                 nwritten = 0;
             else
@@ -44,9 +46,10 @@ ssize_t writen(int fd, const void *vptr, size_t n)
         }
         nleft -= nwritten;
         ptr += nwritten;
-		if(nwritten > 0)
-		break;
-		}
-	return n;
+        
+        if(nwritten > 0)
+           break;
+    }
+    return n;
 }
 

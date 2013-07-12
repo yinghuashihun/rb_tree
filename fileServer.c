@@ -112,48 +112,49 @@ int main(int argc, char **argv)
         }
            
         /* 开始处理每个新连接上的数据收发 */
-		bzero(buf, MAXBUF + 1);
+        bzero(buf, MAXBUF + 1);
         /* 接收客户端的消息 */
         len = SSL_read(ssl, buf, MAXBUF);
         if (len > 0)
         {
             printf("接收消息成功:'%s'，共%d个字节的数据\n",buf, len);
-		}	
-        else{
+        }   
+        else
+        {
             printf("消息接收失败！错误代码是%d，错误信息是'%s'\n",errno, strerror(errno));
-			goto finish;
+            goto finish;
         }
        
         printf("%s","开始打开文件");
 
-		char * filename = (char *) malloc (50);
-		bzero(filename,50);
-		strcpy(filename,buf);
+        char * filename = (char *) malloc (50);
+        bzero(filename,50);
+        strcpy(filename,buf);
         FILE * fd1 = fopen(filename,"rb");
-		free(filename);
+        free(filename);
         size_t rlen=0;
-		 bzero(buf, MAXBUF + 1);
-	    while (1)
-	    {
-	        rlen =read(fd1,buf,MAXBUF);
-			if (rlen > 0){
-	        	len = SSL_write(ssl, buf, rlen);
-		        if (len <= 0) {
-		            printf
-		                ("消息'%s'发送失败！错误代码是%d，错误信息是'%s'\n",
-		                 buf, errno, strerror(errno));
-		        } else
-		            printf("消息'%s'发送成功，共发送了%d个字节！\n",
-		                   buf, len);
-			}else if (rlen == 0){
-			    printf("OK\n");
-				break;
-			}else {
-			    printf("读出错误消息\n");
-			    goto finish;
-			}	
-			
-	    }
+         bzero(buf, MAXBUF + 1);
+        while (1)
+        {
+            rlen =read(fd1,buf,MAXBUF);
+            if (rlen > 0){
+                len = SSL_write(ssl, buf, rlen);
+                if (len <= 0) {
+                    printf
+                        ("消息'%s'发送失败！错误代码是%d，错误信息是'%s'\n",
+                         buf, errno, strerror(errno));
+                } else
+                    printf("消息'%s'发送成功，共发送了%d个字节！\n",
+                           buf, len);
+            }else if (rlen == 0){
+                printf("OK\n");
+                break;
+            }else {
+                printf("读出错误消息\n");
+                goto finish;
+            }   
+            
+        }
 
         /* 处理每个新连接上的数据收发结束 */
       finish:
@@ -162,7 +163,7 @@ int main(int argc, char **argv)
         /* 释放 SSL */
         SSL_free(ssl);
 
-		fclose(fd1);
+        fclose(fd1);
         /* 关闭 socket */
         close(new_fd);
     }
