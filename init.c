@@ -4,6 +4,7 @@
 #include<string.h>
 
 #define MAX 1024
+#define  SOMETHING 1234
 
 void listallfiles(char * pathname)
 {
