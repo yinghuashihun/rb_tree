@@ -14,7 +14,7 @@ unsigned int GetFileSize(const char* pPath)
 
     memset(&stStatBuff, 0 , sizeof(struct stat));
     
-    if(0 > stat(path, &statbuff))
+    if(0 > stat(pPath, &stStatBuff))
     {  
         return uiFileSize;  
     }
@@ -27,10 +27,11 @@ unsigned int GetFileSize(const char* pPath)
 }
 
 
-void listallfiles(char * pathname)
+void listallfiles(RB_TREE_S *pstTree, char * pathname)
 {
     DIR * pdir = NULL;
     struct dirent *ptr = NULL;
+    unsigned int uiRet = 0;
 
     unsigned int uiFileSize = 0;
 
@@ -67,13 +68,30 @@ void listallfiles(char * pathname)
                 continue;
             }
 
-            
+            uiRet = CacheNodeAdd(pstTree, fullname, uiFileSize);
+            if (SUCCESS != uiRet)
+            {
+               printf("add path to tree failed \r\n");
+
+               break;
+            }
 
         }
     }
     closedir(pdir);
 }
+
 int main(){
-    listallfiles("/opt/apache-tomcat-6.0.36/webapps/website");
-    return 1;
+    RB_TREE_S *pstTree= NULL;
+
+    pstTree = CacheTreeCreate();
+
+    if (NULL == pstTree)
+    {
+       printf("Create cache failed\r\n");
+       return 1;
+    }
+    
+    listallfiles(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
+    return 0;
 }
