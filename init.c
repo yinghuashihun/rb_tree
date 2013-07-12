@@ -2,46 +2,78 @@
 #include<stdlib.h>
 #include<dirent.h>
 #include<string.h>
+#include<unistd.h>
+#include"rb_tree.h"
 
-#define MAX 1024
-#define  SOMETHING 1234
+#define MAX 512
+
+unsigned int GetFileSize(const char* pPath)
+{
+    unsigned int uiFileSize = 0;      
+    struct stat stStatBuff;
+
+    memset(&stStatBuff, 0 , sizeof(struct stat));
+    
+    if(0 > stat(path, &statbuff))
+    {  
+        return uiFileSize;  
+    }
+    else
+    {  
+        uiFileSize = stStatBuff.st_size;  
+    }
+
+    return uiFileSize;   
+}
+
 
 void listallfiles(char * pathname)
 {
-    DIR * dir;
-	struct dirent *ptr;
-	char path[MAX];
+    DIR * pdir = NULL;
+    struct dirent *ptr = NULL;
+
+    unsigned int uiFileSize = 0;
+
+    char fullname[MAX];
+    bzero(fullname,MAX);
+    char path[MAX];
     bzero(path,MAX);
-	dir = opendir(pathname);
-	if(NULL == dir)
-	{
-		exit(1);
-	}
+
+    pdir = opendir(pathname);
+    if(NULL == pdir)
+    {
+        exit(1);
+    }
     
-	while( (ptr = readdir(dir)) !=NULL )
-	{
-	    if(0 == strcmp(ptr->d_name,".") ||  0 == strcmp(ptr->d_name,".."))
-	    {
-			continue;
-	    }
-		if(DT_DIR == ptr->d_type)
-		{
-		    
-			sprintf(path,"%s/%s",pathname,ptr->d_name);
-           
-			listallfiles(path);
-		}
-		if(DT_REG == ptr->d_type)
-		{
-		    char fullname[MAX];
-			bzero(fullname,MAX);
-		    sprintf(fullname,"%s/%s",pathname,ptr->d_name);
-			printf("%s\n",fullname);
-		}
-	}
-	closedir(dir);
+    while( (ptr = readdir(pdir)) !=NULL )
+    {
+        if(0 == strcmp(ptr->d_name,".") ||  0 == strcmp(ptr->d_name,".."))
+        {
+            continue;
+        }
+
+        /* 递归遍历指定目录子目录下的所有文件 */
+        if(DT_DIR == ptr->d_type)
+        {
+            listallfiles(path);
+        }
+        if(DT_REG == ptr->d_type)
+        {
+            sprintf(fullname, "%s/%s", pathname, ptr->d_name);
+            /* 获取文件的大小 */
+            uiFileSize = GetFileSize(fullname);
+            if (0 == uiFileSize)
+            {
+                continue;
+            }
+
+            
+
+        }
+    }
+    closedir(pdir);
 }
 int main(){
-	listallfiles("/opt/apache-tomcat-6.0.36/webapps/website");
-	return 1;
+    listallfiles("/opt/apache-tomcat-6.0.36/webapps/website");
+    return 1;
 }
