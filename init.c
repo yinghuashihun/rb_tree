@@ -6,8 +6,65 @@
 #include"rb_tree.h"
 
 #define MAX 255
+#define CACHE_BUFF_SIZE 10
 
 RB_TREE_S* g_pstTree = NULL;
+
+CACHE_BUFFER_S* g_pacCacheBuff[CACHE_BUFF_SIZE] = {0};
+
+
+unsigned int GetVaildBuff(CACHE_NODE_S* pstCacheNode)
+{
+   unsigned int uiRet = FAILED;
+   int i = 0;
+   for(i = 0; i < CACHE_BUFF_SIZE; ++i)
+   {
+      if ((NULL == g_pacCacheBuff[i].pstCache) ||
+          (0 == g_pacCacheBuff[i].pstCache.uiCnt))
+      {
+          pstCacheNode->pData = g_pacCacheBuff[i].pcBuff;
+
+          g_pacCacheBuff[i].pstCache = pstCacheNode;
+
+          uiRet = SUCCESS;
+          break;
+      }
+   }
+
+   return uiRet;
+}
+
+void WriteDataToBuff(char* pcPathName, CACHE_NODE_S* pstCacheNode)
+{
+
+   FILE *pFileDes = open(pcPathName, "rb");
+   unsigned int uiFileLen = pstCacheNode->uiFileSize;
+   unsigned int uiReadFileLen = 0;
+
+   if (NULL == pFileDes)
+   {
+      printf("open the file %s failed \r\n", pcPathName);
+      return;
+   }
+
+   uiReadFileLen = fread((char*)pstCacheNode->pData,
+                          sizeof(char), uiFileLen,
+                          pFileDes);
+
+   if (uiReadFileLen != uiFileLen)
+   {
+      printf("read file failed \r\n");
+
+      /* Buff的数据清零 */
+      memset(pstCacheNode->pData, 0, uiReadFileLen);
+      return;
+   }
+   pstCacheNode->uiCnt += 1;
+
+   close(pFileDes);
+
+   return;
+}
 
 unsigned int GetFileSize(const char* pPath)
 {
@@ -94,7 +151,7 @@ void SetCacheTree(RB_TREE_S *pstTree)
    return;
 }
 
-void InitCacheTree()
+void CacheTreeInit()
 {
     RB_TREE_S *pstTree= NULL;
 
@@ -110,11 +167,6 @@ void InitCacheTree()
     return;
 }
 
-/* 申请缓存的大小 */
-void InitCacheBuff()
-{
-
-}
 
 unsigned int RequestProc(char* pcPath)
 {
@@ -134,15 +186,17 @@ unsigned int RequestProc(char* pcPath)
      /* 从硬盘读取数据 */
    }
 
+   GetVaildBuff(pstCache);
    /* 直接将数据读取保存在树中 */
+   WriteDataToBuff(pcPath, pstCache);
    
 }
 
 int main()
 {
     RB_TREE_S *pstTree = NULL;
-    InitCacheTree();
-    InitCacheBuff();
+    CacheTreeInit();
+    CacheBuffInit();
 
     pstTree = GetCacheTree();
     listallfiles(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
