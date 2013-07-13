@@ -31,9 +31,8 @@ void cacheNodeFree(RB_NODE_S *pstKey)
     return;
 }
 
-CACHE_NODE_S* cacheNodeFind(RB_TREE_S *pstTree, char acPathName[])
-{
-    CACHE_NODE_S stCacheNode;
+CACHE_NODE_S* CacheNodeFind(RB_TREE_S *pstTree, char* pcPathName)
+{    CACHE_NODE_S stCacheNode;
     RB_NODE_S *pstRbNode = NULL;
     CACHE_NODE_S pstCache = NULL;
     
@@ -53,7 +52,7 @@ CACHE_NODE_S* cacheNodeFind(RB_TREE_S *pstTree, char acPathName[])
 }
 
 
-int CacheNodeAdd(RB_TREE_S *pstTree, char acPathName[], unsigned int uiFileSize)
+int CacheNodeAdd(RB_TREE_S *pstTree, char* pcPathName, unsigned int uiFileSize)
 {
    CACHE_NODE_S *pstCacheNode = NULL;
    unsigned int uiRet = SUCCESS;
@@ -82,9 +81,9 @@ int CacheNodeAdd(RB_TREE_S *pstTree, char acPathName[], unsigned int uiFileSize)
 }
 
 
-int CacheNodeClean(RB_TREE_S *pstTree, char acPathName[])
+int CacheNodeClean(RB_TREE_S *pstTree, char* pcPathName)
 {
-    CACHE_NODE_S pstCache = cacheNodeFind(pstTree, acPathName);
+    CACHE_NODE_S pstCache = CacheNodeFind(pstTree, pcPathName);
     if (NULL == pstCache)
     {
        return FAILED;
@@ -98,9 +97,9 @@ int CacheNodeClean(RB_TREE_S *pstTree, char acPathName[])
     return SUCCESS;
 }
 
-int CacheNodeDel(RB_TREE_S *pstTree, char acPathName[])
+int CacheNodeDel(RB_TREE_S *pstTree, char* pcPathName)
 {
-    CACHE_NODE_S *pstCache = cacheNodeFind(pstTree, acPathName);
+    CACHE_NODE_S *pstCache = CacheNodeFind(pstTree, pcPathName);
     if (NULL == pstCache)
     {
        return FAILED;
@@ -120,7 +119,7 @@ int CacheNodeDel(RB_TREE_S *pstTree, char acPathName[])
 RB_TREE_S * CacheTreeCreate()
 { 
    RB_TREE_S *pstRbTree = NULL;
-   pstRbTree = RB_Init(CacheKeyCmp, CacheNodeFree);
+   pstRbTree = RB_Init(cacheKeyCmp, cacheNodeFree);
 
    if (NULL == pstRbTree)
    {

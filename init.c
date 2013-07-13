@@ -5,7 +5,9 @@
 #include<unistd.h>
 #include"rb_tree.h"
 
-#define MAX 512
+#define MAX 255
+
+RB_TREE_S* g_pstTree = NULL;
 
 unsigned int GetFileSize(const char* pPath)
 {
@@ -81,7 +83,19 @@ void listallfiles(RB_TREE_S *pstTree, char * pathname)
     closedir(pdir);
 }
 
-int main(){
+RB_TREE_S* GetCacheTree()
+{
+   return g_pstTree;
+}
+
+void SetCacheTree(RB_TREE_S *pstTree)
+{
+   g_pstTree = pstTree;
+   return;
+}
+
+void InitCacheTree()
+{
     RB_TREE_S *pstTree= NULL;
 
     pstTree = CacheTreeCreate();
@@ -89,9 +103,48 @@ int main(){
     if (NULL == pstTree)
     {
        printf("Create cache failed\r\n");
-       return 1;
+       return;
     }
-    
+
+    SetCacheTree(pstTree);
+    return;
+}
+
+/* 申请缓存的大小 */
+void InitCacheBuff()
+{
+
+}
+
+unsigned int RequestProc(char* pcPath)
+{
+   RB_TREE_S *pstTree = NULL;
+
+   CACHE_NODE_S* pstCache = NULL;
+   pstTree = GetCacheTree();
+   if (NULL != pstTree)
+   {
+      return FAILED;
+   }
+
+   pstCache = CacheNodeFind(pstTree, pcPath);
+
+   if (NULL == pstCache)
+   {
+     /* 从硬盘读取数据 */
+   }
+
+   /* 直接将数据读取保存在树中 */
+   
+}
+
+int main()
+{
+    RB_TREE_S *pstTree = NULL;
+    InitCacheTree();
+    InitCacheBuff();
+
+    pstTree = GetCacheTree();
     listallfiles(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
     return 0;
 }

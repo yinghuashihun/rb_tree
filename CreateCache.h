@@ -19,6 +19,9 @@ int CacheNodeClean(RB_TREE_S *pstTree, char acPathName[]);
 
 int CacheNodeDel(RB_TREE_S *pstTree, char acPathName[]);
 
+CACHE_NODE_S* CacheNodeFind(RB_TREE_S *pstTree, char* pcPathName);
+
+
 RB_TREE_S * CacheTreeCreate();
 
 
