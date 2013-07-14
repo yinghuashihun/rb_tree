@@ -6,139 +6,10 @@
 #include"rb_tree.h"
 
 #define MAX 255
-#define CACHE_BUFF_SIZE 10
 
 RB_TREE_S* g_pstTree = NULL;
 
-CACHE_BUFFER_S* g_pacCacheBuff[CACHE_BUFF_SIZE] = {0};
-
-
-unsigned int GetVaildBuff(CACHE_NODE_S* pstCacheNode)
-{
-   unsigned int uiRet = FAILED;
-   int i = 0;
-   for(i = 0; i < CACHE_BUFF_SIZE; ++i)
-   {
-      if ((NULL == g_pacCacheBuff[i].pstCache) ||
-          (0 == g_pacCacheBuff[i].pstCache.uiCnt))
-      {
-          pstCacheNode->pData = g_pacCacheBuff[i].pcBuff;
-
-          g_pacCacheBuff[i].pstCache = pstCacheNode;
-
-          uiRet = SUCCESS;
-          break;
-      }
-   }
-
-   return uiRet;
-}
-
-void WriteDataToBuff(char* pcPathName, CACHE_NODE_S* pstCacheNode)
-{
-
-   FILE *pFileDes = open(pcPathName, "rb");
-   unsigned int uiFileLen = pstCacheNode->uiFileSize;
-   unsigned int uiReadFileLen = 0;
-
-   if (NULL == pFileDes)
-   {
-      printf("open the file %s failed \r\n", pcPathName);
-      return;
-   }
-
-   uiReadFileLen = fread((char*)pstCacheNode->pData,
-                          sizeof(char), uiFileLen,
-                          pFileDes);
-
-   if (uiReadFileLen != uiFileLen)
-   {
-      printf("read file failed \r\n");
-
-      /* Buff的数据清零 */
-      memset(pstCacheNode->pData, 0, uiReadFileLen);
-      return;
-   }
-   pstCacheNode->uiCnt += 1;
-
-   close(pFileDes);
-
-   return;
-}
-
-unsigned int GetFileSize(const char* pPath)
-{
-    unsigned int uiFileSize = 0;      
-    struct stat stStatBuff;
-
-    memset(&stStatBuff, 0 , sizeof(struct stat));
-    
-    if(0 > stat(pPath, &stStatBuff))
-    {  
-        return uiFileSize;  
-    }
-    else
-    {  
-        uiFileSize = stStatBuff.st_size;  
-    }
-
-    return uiFileSize;   
-}
-
-
-void listallfiles(RB_TREE_S *pstTree, char * pathname)
-{
-    DIR * pdir = NULL;
-    struct dirent *ptr = NULL;
-    unsigned int uiRet = 0;
-
-    unsigned int uiFileSize = 0;
-
-    char fullname[MAX];
-    bzero(fullname,MAX);
-    char path[MAX];
-    bzero(path,MAX);
-
-    pdir = opendir(pathname);
-    if(NULL == pdir)
-    {
-        exit(1);
-    }
-    
-    while( (ptr = readdir(pdir)) !=NULL )
-    {
-        if(0 == strcmp(ptr->d_name,".") ||  0 == strcmp(ptr->d_name,".."))
-        {
-            continue;
-        }
-
-        /* 递归遍历指定目录子目录下的所有文件 */
-        if(DT_DIR == ptr->d_type)
-        {
-            listallfiles(path);
-        }
-        if(DT_REG == ptr->d_type)
-        {
-            sprintf(fullname, "%s/%s", pathname, ptr->d_name);
-            /* 获取文件的大小 */
-            uiFileSize = GetFileSize(fullname);
-            if (0 == uiFileSize)
-            {
-                continue;
-            }
-
-            uiRet = CacheNodeAdd(pstTree, fullname, uiFileSize);
-            if (SUCCESS != uiRet)
-            {
-               printf("add path to tree failed \r\n");
-
-               break;
-            }
-
-        }
-    }
-    closedir(pdir);
-}
+CACHE_HEAD_S* g_pstCacheHead = NULL;
 
 RB_TREE_S* GetCacheTree()
 {
@@ -151,26 +22,23 @@ void SetCacheTree(RB_TREE_S *pstTree)
    return;
 }
 
-void CacheTreeInit()
+CACHE_HEAD_S* GetCacheHead()
 {
-    RB_TREE_S *pstTree= NULL;
+   return g_pstCacheHead;
+}
 
-    pstTree = CacheTreeCreate();
-
-    if (NULL == pstTree)
-    {
-       printf("Create cache failed\r\n");
-       return;
-    }
-
-    SetCacheTree(pstTree);
-    return;
+void SetCacheHead(CACHE_HEAD_S* pstCacheHead)
+{
+   g_pstCacheHead = pstCacheHead;
+   return;
 }
 
 
 unsigned int RequestProc(char* pcPath)
 {
    RB_TREE_S *pstTree = NULL;
+
+   unsigned int uiRet = 0;
 
    CACHE_NODE_S* pstCache = NULL;
    pstTree = GetCacheTree();
@@ -181,24 +49,61 @@ unsigned int RequestProc(char* pcPath)
 
    pstCache = CacheNodeFind(pstTree, pcPath);
 
+   /* 如果节点没有预先读入缓存树中 */
    if (NULL == pstCache)
    {
-     /* 从硬盘读取数据 */
+      /* 从硬盘读取数据 */
+      uiRet = GetVaildBuff(pstCache);
+
+      if(SUCCESS != uiRet)
+      {
+         printf("Get buffer failed \r\n");
+
+         return;
+      }
+
+      WriteDataToBuff(pcPath, pstCache);
    }
 
-   GetVaildBuff(pstCache);
-   /* 直接将数据读取保存在树中 */
-   WriteDataToBuff(pcPath, pstCache);
+   if ((0 == pstCache->uiCnt) && 
+       (NULL == pstCache->pData))
+   {
+       /* 如果已经已经加入树，但是还没有读取过数据 */
+       uiRet = GetVaildBuff(pstCache);
+       if(SUCCESS != uiRet)
+       {
+          printf("Get buffer failed \r\n");
+
+          return;
+       }
+
+       /* 直接将数据读取保存在树中 */
+       WriteDataToBuff(pcPath, pstCache);
+   }
+
+   /* 向请求者发送数据 */
    
 }
 
 int main()
 {
     RB_TREE_S *pstTree = NULL;
-    CacheTreeInit();
-    CacheBuffInit();
+    CACHE_HEAD_S* pstCacheHead = NULL;
 
+    CacheHeadInit();
+    pstCacheHead = GetCacheHead();
+    if (NULL == pstCacheHead)
+    {
+       return;
+    }
+
+    CacheTreeInit();
     pstTree = GetCacheTree();
-    listallfiles(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
+
+    if (NULL == pstTree)
+    {
+       return;
+    }
+    CacheTreeBuild(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
     return 0;
 }
