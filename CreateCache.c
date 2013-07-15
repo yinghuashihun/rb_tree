@@ -266,7 +266,6 @@ unsigned int GetVaildBuff(CACHE_HEAD_S* pstCacheHead, CACHE_NODE_S* pstCacheNode
           pstCacheNode->uiBuffIndex = i;
 
           pstCacheBuff->pstCache = pstCacheNode;
-
           uiRet = SUCCESS;
           break;
       }

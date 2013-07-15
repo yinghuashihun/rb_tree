@@ -6,24 +6,25 @@
 
 #define CACHE_BUFF_SIZE 10
 
-
+/* RB_TREE上的节点的结构 */
 typedef struct CacheData
 {
   RB_NODE_S    stRbNode;
   unsigned int uiFileSize; /* 文件的大小 */
   void         *pData;     /* 文件的内容 */
   unsigned int uiCnt;      /* 文件的请求计数 */
-  int          iBuffIndex;
+  int          iBuffIndex; /* 节点读取文件所用Buffer的索引 */
   char         acPathName[MAXPATH]; /* 文件名 */
 }CACHE_NODE_S;
 
-
+/* Buffer结构  */
 typedef struct Cache_Buffer
 {
-    CACHE_NODE_S *pstCache;
-    char* pcBuff;
+    CACHE_NODE_S *pstCache; /* 指明该Buffer被哪个树上的节点占用 */
+    char* pcBuff;           /*  Buffer缓存区 */
 }CACHE_BUFFER_S;
 
+/* BufferHead 用来管理Buff */
 typedef struct Cache_Head
 {
     CACHE_BUFFER_S* pstCacheBuff[CACHE_BUFF_SIZE];
@@ -44,7 +45,7 @@ void CacheTreeBuild(RB_TREE_S *pstTree, char * pcPathname);
 
 CACHE_NODE_S* CacheNodeFind(RB_TREE_S *pstTree, char* pcPathName);
 
-RB_TREE_S * CacheTreeCreate();
+RB_TREE_S* CacheTreeCreate();
 
 CACHE_HEAD_S* CacheHeadCreate();
 

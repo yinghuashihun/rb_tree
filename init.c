@@ -59,7 +59,7 @@ unsigned int RequestProc(char* pcPath)
       {
          printf("Get buffer failed \r\n");
 
-         return;
+         return FAILED;
       }
 
       WriteDataToBuff(pcPath, pstCache);
@@ -74,7 +74,7 @@ unsigned int RequestProc(char* pcPath)
        {
           printf("Get buffer failed \r\n");
 
-          return;
+          return FAILED;
        }
 
        /* 直接将数据读取保存在树中 */
