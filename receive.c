@@ -12,11 +12,16 @@
 #include <sys/epoll.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-
+#include <pthread.h>
 
 
 #define MAXBUF 1024  
 #define MAXEPOLLSIZE 10000  
+#define TASKQUEUENUMBER 256
+#define PORT 5000
+#define THREADNUMBER 5
+
+
 
 int findpathend(char* buf)
 {
@@ -52,7 +57,7 @@ int handle_message(int new_fd)
     if (len > 0)  
     {  
         printf("%d receive messasge success:%s, total %d byte data\n",new_fd, buf, len);
-        char* res ="HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length=14712\r\n\r\n" ;
+        char* res ="HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: 14712\r\n\r\n" ;
         write(new_fd, res, strlen(res));
         FILE * fd1 = fopen("./b.jpg","rb");
         int rlen=0;
@@ -90,20 +95,68 @@ int handle_message(int new_fd)
     
     return len;  
 }
+    
+
+
+int listener, new_fd, kdpfd, nfds, n, ret, curfds;  
+socklen_t len;  
+struct sockaddr_in my_addr, their_addr;  
+unsigned int  lisnum;  
+struct epoll_event ev;  
+struct epoll_event events[MAXEPOLLSIZE];  
+struct rlimit rt;
+
+
+pthread_t thread[THREADNUMBER]; 
+int task[TASKQUEUENUMBER];
+int headindex = 0;
+int tailindx = 0;
+
+
+pthread_cond_t taskCond = PTHREAD_COND_INITIALIZER; 
+pthread_mutex_t taskMutex  = PTHREAD_MUTEX_INITIALIZER; 
+
+void* handle_readable_fd(void* parameter)
+{
+    while (1)
+    {
+        pthread_mutex_lock(&taskMutex); 
+        int myjob = headindex;
+        if(headindex == tailindx)
+        {
+            pthread_cond_wait (&taskCond, &taskMutex); 
+        }else{
+            int fd = task[headindex];
+            headindex ++;
+            pthread_mutex_unlock (&taskMutex); 
+            handle_message(fd);
+            pthread_mutex_lock(&taskMutex); 
+            epoll_ctl(kdpfd, EPOLL_CTL_DEL,fd,&ev);  
+            curfds--;  
+            pthread_mutex_unlock (&taskMutex);
+        }
+         
+        pthread_mutex_unlock (&taskMutex); 
+    }
+}
+
+
+void initPthread(void)
+{
+    bzero(task,TASKQUEUENUMBER*sizeof(int));
+    pthread_attr_t threadAttr; 
+    pthread_attr_init(&threadAttr);
+    int i = 0;
+    for(;i<THREADNUMBER;i++)
+    {
+         pthread_create(&thread[i], &threadAttr, handle_readable_fd, NULL);
+    }
+}
 
 int main(int argc, char **argv)  
 {  
     printf("pid=%d\n", getpid());
 
-    int listener, new_fd, kdpfd, nfds, n, ret, curfds;  
-    socklen_t len;  
-    struct sockaddr_in my_addr, their_addr;  
-    unsigned int myport, lisnum;  
-    struct epoll_event ev;  
-    struct epoll_event events[MAXEPOLLSIZE];  
-    struct rlimit rt;
-
-    myport = 5000;  
     lisnum = 2; 
     rt.rlim_max = rt.rlim_cur = MAXEPOLLSIZE;  
     if (setrlimit(RLIMIT_NOFILE, &rt) == -1)   
@@ -134,7 +187,7 @@ int main(int argc, char **argv)
 
     /* ÉèÖÃsocket */
     my_addr.sin_family = AF_INET;  
-    my_addr.sin_port = htons(myport);  
+    my_addr.sin_port = htons(PORT);  
     my_addr.sin_addr.s_addr = INADDR_ANY;
 
     if (bind(listener, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1)   
@@ -163,6 +216,9 @@ int main(int argc, char **argv)
     ev.events = EPOLLIN | EPOLLET;  
     ev.data.fd = listener;
 
+
+   
+
     if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, listener, &ev) < 0)   
     {  
         fprintf(stderr, "epoll set insertion error: fd=%d\n", listener);  
@@ -173,6 +229,10 @@ int main(int argc, char **argv)
          printf("listen sockt add epoll\n");  
     }
     curfds = 1; 
+    
+    
+    initPthread();
+
 
     while (1)   
     {  
@@ -211,21 +271,22 @@ int main(int argc, char **argv)
                 }  
                 curfds++;  
             }   
-            else  
-            {  
+            else{  
+               task[tailindx] = events[n].data.fd;
+               tailindx =  (tailindx+1)%TASKQUEUENUMBER;
+               pthread_cond_signal(&taskCond); 
+               /*
                ret = handle_message(events[n].data.fd);  
                printf ("return result = %d ",ret);
                if (ret < 1 && errno != 11)  
                {  
                    printf("delefd %d",events[n].data.fd);
-                   epoll_ctl(kdpfd, EPOLL_CTL_DEL, events[n].data.fd,&ev);  
-                   curfds--;  
-               }  
+                   
+               } 
+               */ 
             }  
          }  
     }  
     close(listener);  
     return 0;  
 }    
-
-

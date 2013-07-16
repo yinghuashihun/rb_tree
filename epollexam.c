@@ -17,7 +17,7 @@
 #define MAXEPOLLSIZE 10000
 
 
-/* 设置socket 非阻塞模式 */
+/* set opt nonblock */
 int setnonblocking(int sockfd)
 {
     if (fcntl(sockfd, F_SETFL, fcntl(sockfd, F_GETFD, 0)|O_NONBLOCK) == -1) 
@@ -27,7 +27,7 @@ int setnonblocking(int sockfd)
     return 0;
 }
 
-/* 从socket接受数据，进行处理 */
+/* read data form net fd*/
 int handle_message(int new_fd)
 {
     char buf[MAXBUF + 1];
