@@ -15,11 +15,16 @@
 #include <pthread.h>
 
 
+
+
 #define MAXBUF 1024  
 #define MAXEPOLLSIZE 10000  
 #define TASKQUEUENUMBER 256
 #define PORT 5000
 #define THREADNUMBER 5
+
+
+
 
 
 
@@ -31,6 +36,7 @@ int findpathend(char* buf)
     {
         if(' ' == *c)
         return position;
+
 
         position++;
         c += 1;
@@ -56,7 +62,7 @@ int handle_message(int new_fd)
     len = recv(new_fd, buf, MAXBUF, 0);  
     if (len > 0)  
     {  
-        printf("%d receive messasge success:%s, total %d byte data\n",new_fd, buf, len);
+        //printf("%d receive messasge success:%s, total %d byte data\n",new_fd, buf, len);
         char* res ="HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: 14712\r\n\r\n" ;
         write(new_fd, res, strlen(res));
         FILE * fd1 = fopen("./b.jpg","rb");
@@ -71,7 +77,7 @@ int handle_message(int new_fd)
             }
             else if (0 == rlen)
             {
-                printf("OK1232123\n");
+                printf("findished writing\n");
                 len = -1;
                 break;
             }
@@ -88,14 +94,16 @@ int handle_message(int new_fd)
     {  
         if (len < 0)  
            printf ("message receive failed,code is %d, and message is '%s'\n",errno, strerror(errno));  
-        close(new_fd);  
+        //close(new_fd);  
         len = -1;  
     } 
-
+   close(new_fd); 
     
     return len;  
 }
     
+
+
 
 
 int listener, new_fd, kdpfd, nfds, n, ret, curfds;  
@@ -107,14 +115,19 @@ struct epoll_event events[MAXEPOLLSIZE];
 struct rlimit rt;
 
 
+
+
 pthread_t thread[THREADNUMBER]; 
 int task[TASKQUEUENUMBER];
 int headindex = 0;
 int tailindx = 0;
 
 
+
+
 pthread_cond_t taskCond = PTHREAD_COND_INITIALIZER; 
 pthread_mutex_t taskMutex  = PTHREAD_MUTEX_INITIALIZER; 
+
 
 void* handle_readable_fd(void* parameter)
 {
@@ -122,23 +135,25 @@ void* handle_readable_fd(void* parameter)
     {
         pthread_mutex_lock(&taskMutex); 
         int myjob = headindex;
-        if(headindex == tailindx)
+        if(headindex >= tailindx && 0 == task[myjob])
         {
             pthread_cond_wait (&taskCond, &taskMutex); 
         }else{
-            int fd = task[headindex];
-            headindex ++;
-            pthread_mutex_unlock (&taskMutex); 
-            handle_message(fd);
-            pthread_mutex_lock(&taskMutex); 
+            int fd = task[myjob];
+            headindex =headindex+1/TASKQUEUENUMBER;
+            task[myjob] = 0;
             epoll_ctl(kdpfd, EPOLL_CTL_DEL,fd,&ev);  
             curfds--;  
-            pthread_mutex_unlock (&taskMutex);
+            pthread_mutex_unlock (&taskMutex); 
+            handle_message(fd);
+            continue;
         }
          
         pthread_mutex_unlock (&taskMutex); 
     }
 }
+
+
 
 
 void initPthread(void)
@@ -153,11 +168,13 @@ void initPthread(void)
     }
 }
 
+
 int main(int argc, char **argv)  
 {  
     printf("pid=%d\n", getpid());
 
-    lisnum = 2; 
+
+    lisnum = 200; 
     rt.rlim_max = rt.rlim_cur = MAXEPOLLSIZE;  
     if (setrlimit(RLIMIT_NOFILE, &rt) == -1)   
     {  
@@ -168,6 +185,7 @@ int main(int argc, char **argv)
     {  
         printf("set system resouce parameter sucessful !\n");  
     } 
+
 
     /* 创建socket */
     if ((listener = socket(AF_INET, SOCK_STREAM, 0)) == -1)  
@@ -182,13 +200,16 @@ int main(int argc, char **argv)
     
     bzero(&my_addr, sizeof(my_addr));
 
+
     /* 设置socket属性为非阻塞模式 */
     setnonblocking(listener);
+
 
     /* 设置socket */
     my_addr.sin_family = AF_INET;  
     my_addr.sin_port = htons(PORT);  
     my_addr.sin_addr.s_addr = INADDR_ANY;
+
 
     if (bind(listener, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1)   
     {  
@@ -200,6 +221,7 @@ int main(int argc, char **argv)
         printf("IP address binding sucessfully\n");  
     } 
 
+
     if (listen(listener, lisnum) == -1)   
     {  
         perror("listen");  
@@ -210,6 +232,7 @@ int main(int argc, char **argv)
         printf("service begin\n");  
     } 
 
+
     /* 创建epoll */
     kdpfd = epoll_create(MAXEPOLLSIZE);
     len = sizeof(struct sockaddr_in);  
@@ -217,7 +240,10 @@ int main(int argc, char **argv)
     ev.data.fd = listener;
 
 
+
+
    
+
 
     if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, listener, &ev) < 0)   
     {  
@@ -232,6 +258,8 @@ int main(int argc, char **argv)
     
     
     initPthread();
+
+
 
 
     while (1)   
@@ -254,13 +282,14 @@ int main(int argc, char **argv)
                 }   
                 else  
                 {  
-                    printf("connection coming from  %d:%d assign  socket is %d\n",  
-                           inet_ntoa(their_addr.sin_addr), ntohs(their_addr.sin_port), new_fd);  
+                    printf("socket is %d\n",new_fd);  
                 }
+
 
                 setnonblocking(new_fd);  
                 ev.events = EPOLLIN | EPOLLET;  
                 ev.data.fd = new_fd;
+
 
                 if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, new_fd, &ev) < 0)  
                 {  
@@ -274,7 +303,7 @@ int main(int argc, char **argv)
             else{  
                task[tailindx] = events[n].data.fd;
                tailindx =  (tailindx+1)%TASKQUEUENUMBER;
-               pthread_cond_signal(&taskCond); 
+               pthread_cond_broadcast(&taskCond); 
                /*
                ret = handle_message(events[n].data.fd);  
                printf ("return result = %d ",ret);
