@@ -15,16 +15,11 @@
 #include <pthread.h>
 
 
-
-
 #define MAXBUF 1024  
 #define MAXEPOLLSIZE 10000  
 #define TASKQUEUENUMBER 256
 #define PORT 5000
 #define THREADNUMBER 5
-
-
-
 
 
 
@@ -36,7 +31,6 @@ int findpathend(char* buf)
     {
         if(' ' == *c)
         return position;
-
 
         position++;
         c += 1;
@@ -107,8 +101,6 @@ int handle_message(int new_fd)
     
 
 
-
-
 int listener, new_fd, kdpfd, nfds, n, ret, curfds;  
 socklen_t len;  
 struct sockaddr_in my_addr, their_addr;  
@@ -118,19 +110,14 @@ struct epoll_event events[MAXEPOLLSIZE];
 struct rlimit rt;
 
 
-
-
 pthread_t thread[THREADNUMBER]; 
 int task[TASKQUEUENUMBER];
 int headindex = 0;
 int tailindx = 0;
 
 
-
-
 pthread_cond_t taskCond = PTHREAD_COND_INITIALIZER; 
 pthread_mutex_t taskMutex  = PTHREAD_MUTEX_INITIALIZER; 
-
 
 void* handle_readable_fd(void* parameter)
 {
@@ -157,8 +144,6 @@ void* handle_readable_fd(void* parameter)
 }
 
 
-
-
 void initPthread(void)
 {
     bzero(task,TASKQUEUENUMBER*sizeof(int));
@@ -170,7 +155,6 @@ void initPthread(void)
          pthread_create(&thread[i], &threadAttr, handle_readable_fd, NULL);
     }
 }
-
 
 int main(int argc, char **argv)  
 {  
@@ -189,7 +173,6 @@ int main(int argc, char **argv)
         printf("set system resouce parameter sucessful !\n");  
     } 
 
-
     /* 创建socket */
     if ((listener = socket(AF_INET, SOCK_STREAM, 0)) == -1)  
     {  
@@ -203,16 +186,13 @@ int main(int argc, char **argv)
     
     bzero(&my_addr, sizeof(my_addr));
 
-
     /* 设置socket属性为非阻塞模式 */
     setnonblocking(listener);
-
 
     /* 设置socket */
     my_addr.sin_family = AF_INET;  
     my_addr.sin_port = htons(PORT);  
     my_addr.sin_addr.s_addr = INADDR_ANY;
-
 
     if (bind(listener, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1)   
     {  
@@ -224,7 +204,6 @@ int main(int argc, char **argv)
         printf("IP address binding sucessfully\n");  
     } 
 
-
     if (listen(listener, lisnum) == -1)   
     {  
         perror("listen");  
@@ -235,7 +214,6 @@ int main(int argc, char **argv)
         printf("service begin\n");  
     } 
 
-
     /* 创建epoll */
     kdpfd = epoll_create(MAXEPOLLSIZE);
     len = sizeof(struct sockaddr_in);  
@@ -243,10 +221,7 @@ int main(int argc, char **argv)
     ev.data.fd = listener;
 
 
-
-
    
-
 
     if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, listener, &ev) < 0)   
     {  
@@ -261,8 +236,6 @@ int main(int argc, char **argv)
     
     
     initPthread();
-
-
 
 
     while (1)   
@@ -288,11 +261,9 @@ int main(int argc, char **argv)
                     printf("socket is %d\n",new_fd);  
                 }
 
-
                 setnonblocking(new_fd);  
                 ev.events = EPOLLIN | EPOLLET;  
                 ev.data.fd = new_fd;
-
 
                 if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, new_fd, &ev) < 0)  
                 {  
