@@ -3,8 +3,10 @@
 #include<dirent.h>
 #include<string.h>
 #include<unistd.h>
+#include<sys/stat.h>
+#include<sys/types.h>
 #include"rb_tree.h"
-#include"CreateCache.h"
+#include"CacheBuff.h"
 
 /* **********************************************************
   * Function Name : writetoBuff
@@ -17,7 +19,7 @@
 unsigned int writetoBuff(char* pcPathName, CACHE_NODE_S* pstCacheNode)
 {
    unsigned int uiRet = FAILED;
-   FILE *pFileDes = open(pcPathName, "rb");
+   FILE *pFileDes = fopen(pcPathName, "rb");
    unsigned int uiFileLen = pstCacheNode->uiFileSize;
    unsigned int uiReadFileLen = 0;
 
@@ -27,7 +29,7 @@ unsigned int writetoBuff(char* pcPathName, CACHE_NODE_S* pstCacheNode)
       return uiRet;
    }
 
-   uiReadFileLen = fread((char*)pstCacheNode->pData,
+   uiReadFileLen = fread((char*)pstCacheNode->pcData,
                           sizeof(char), uiFileLen,
                           pFileDes);
 
@@ -39,7 +41,7 @@ unsigned int writetoBuff(char* pcPathName, CACHE_NODE_S* pstCacheNode)
    }
    pstCacheNode->uiCnt += 1;
 
-   close(pFileDes);
+   fclose(pFileDes);
 
    return SUCCESS;
 }
@@ -152,12 +154,6 @@ unsigned int cacheNodeInsert(RB_TREE_S *pstTree, CACHE_NODE_S *pstCacheNode)
    unsigned int uiRet = FAILED;
    uiRet = RB_Insert(&(pstCacheNode->stRbNode), pstTree);
 
-   /* 节点插入失败，释放内存 */
-   if (RB_OPEAT_SUCCESS != uiRet)
-   {
-      pstTree->pfFree(&(pstCacheNode->stRbNode);
-   }
-   
    return uiRet;
 }
 
@@ -173,11 +169,11 @@ CACHE_NODE_S* CacheNodeFind(RB_TREE_S *pstTree, char* pcPathName)
 {    
     CACHE_NODE_S stCacheNode;
     RB_NODE_S *pstRbNode = NULL;
-    CACHE_NODE_S pstCache = NULL;
+    CACHE_NODE_S *pstCache = NULL;
     
     memset(&stCacheNode, 0, sizeof(CACHE_NODE_S));
     
-    memcpy(stCacheNode->acPathName, acPathName, MAXPATH);
+    memcpy(stCacheNode.acPathName, pcPathName, MAXPATH);
     
     pstRbNode = RB_Search(&(stCacheNode.stRbNode), pstTree);
     if (NULL == pstRbNode)
@@ -305,7 +301,7 @@ void CacheTreeBuild(RB_TREE_S *pstTree, char * pcPathname)
     char path[MAX];
     bzero(path,MAX);
 
-    pdir = opendir(pathname);
+    pdir = opendir(pcPathname);
     if(NULL == pdir)
     {
         exit(1);
@@ -321,11 +317,11 @@ void CacheTreeBuild(RB_TREE_S *pstTree, char * pcPathname)
         /* 递归遍历指定目录子目录下的所有文件 */
         if(DT_DIR == ptr->d_type)
         {
-            CacheTreeBuild(path);
+            CacheTreeBuild(pstTree, path);
         }
         if(DT_REG == ptr->d_type)
         {
-            sprintf(fullname, "%s/%s", pathname, ptr->d_name);
+            sprintf(fullname, "%s/%s", pcPathname, ptr->d_name);
             
             uiRet = CacheNodeAdd(pstTree, fullname);
             if (SUCCESS != uiRet)
@@ -358,6 +354,20 @@ void CacheTreeInit()
     }
 
     SetCacheTree(pstTree);
+    return;
+}
+
+/* **********************************************************
+  * Function Name : CacheTreeDeInit
+  * Description   : 创建一棵树
+  * Author        : Internet
+  * Input/OutPut  :
+  * Return        :
+
+********************************************************* */
+void CacheTreeDeInit(RB_TREE_S *pstTree)
+{
+    RB_DeInit(pstTree);
     return;
 }
 

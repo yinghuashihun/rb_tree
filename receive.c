@@ -13,6 +13,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <pthread.h>
+#include "rb_tree.h"
+#include "CacheBuff.h"
 
 
 #define MAXBUF 1024  
@@ -21,7 +23,19 @@
 #define PORT 5000
 #define THREADNUMBER 5
 
+RB_TREE_S* g_pstTree = NULL;
 
+RB_TREE_S* GetCacheTree()
+{
+   return g_pstTree;
+}
+
+void SetCacheTree(RB_TREE_S *pstTree)
+{
+   g_pstTree = pstTree;
+
+   return;
+}
 
 int findpathend(char* buf)
 {
@@ -52,6 +66,14 @@ int handle_message(int new_fd)
 {    
     char buf[MAXBUF + 1];  
     int len; 
+    RB_TREE_S *pstTree = GetCacheTree();
+    CACHE_NODE_S *pstCacheNode = NULL;
+
+    if (NULL == pstTree)
+    {
+       printf("get rb tree failed \r\n");
+       return -1;
+    }
     bzero(buf, MAXBUF + 1);    
     len = recv(new_fd, buf, MAXBUF, 0);  
     if (len > 0)  
@@ -59,6 +81,19 @@ int handle_message(int new_fd)
         char pathname[200];
         bzero(pathname,200);
         memcpy(pathname,buf+5,findpathend(buf+5));
+
+        pstCacheNode = CacheNodeFind(pstTree, pathname);
+        if (NULL == pstCacheNode)
+        {
+           printf("the request file is not in the cache\r\n");
+
+           return -1;
+        }
+
+
+        write(new_fd, pstCacheNode->pcData, pstCacheNode->uiFileSize);
+        
+#if 0
         //printf("%d receive messasge success:%s, total %d byte data\n",new_fd, buf, len);
         char* res ="HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: 14712\r\n\r\n" ;
         write(new_fd, res, strlen(res));
@@ -86,6 +121,7 @@ int handle_message(int new_fd)
             }       
         }
         fclose(fd1);
+#endif
     }  
     else  
     {  
@@ -160,7 +196,7 @@ int main(int argc, char **argv)
 {  
     printf("pid=%d\n", getpid());
 
-
+    RB_TREE_S *pstTree = NULL;
     lisnum = 200; 
     rt.rlim_max = rt.rlim_cur = MAXEPOLLSIZE;  
     if (setrlimit(RLIMIT_NOFILE, &rt) == -1)   
@@ -220,9 +256,6 @@ int main(int argc, char **argv)
     ev.events = EPOLLIN | EPOLLET;  
     ev.data.fd = listener;
 
-
-   
-
     if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, listener, &ev) < 0)   
     {  
         fprintf(stderr, "epoll set insertion error: fd=%d\n", listener);  
@@ -236,7 +269,16 @@ int main(int argc, char **argv)
     
     
     initPthread();
+    
 
+    CacheTreeInit();
+    pstTree = GetCacheTree();
+
+    if (NULL == pstTree)
+    {
+       return;
+    }
+    CacheTreeBuild(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
 
     while (1)   
     {  
@@ -290,6 +332,11 @@ int main(int argc, char **argv)
             }  
          }  
     }  
-    close(listener);  
+    close(listener); 
+    if (NULL != g_pstTree)
+    {
+        CacheTreeDeInit(pstTree);
+        SetCacheTree(NULL);
+    }
     return 0;  
 }    

@@ -4,8 +4,7 @@
 #define SUCCESS 0;
 #define FAILED  1;
 
-#define CACHE_BUFF_SIZE 10
-
+#define MAX 255
 
 typedef struct CacheData
 {
@@ -16,9 +15,8 @@ typedef struct CacheData
   char         acPathName[MAXPATH]; /* ÎÄ¼þÃû */
 }CACHE_NODE_S;
 
-int CacheNodeAdd(RB_TREE_S *pstTree,
-                 char* pcPathName, 
-                 unsigned int uiFileSize);
+unsigned int CacheNodeAdd(RB_TREE_S *pstTree, const char* pPath);
+
 
 int CacheNodeDel(RB_TREE_S *pstTree, char* pcPathName);
 
@@ -29,6 +27,8 @@ CACHE_NODE_S* CacheNodeFind(RB_TREE_S *pstTree, char* pcPathName);
 RB_TREE_S * CacheTreeCreate();
 
 void CacheTreeInit();
+
+void CacheTreeDeInit(RB_TREE_S *pstTree);
 
 #endif
 
