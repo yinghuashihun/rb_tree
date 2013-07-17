@@ -62,10 +62,13 @@ int handle_message(int new_fd)
     len = recv(new_fd, buf, MAXBUF, 0);  
     if (len > 0)  
     {  
+        char pathname[200];
+        bzero(pathname,200);
+        memcpy(pathname,buf+5,findpathend(buf+5));
         //printf("%d receive messasge success:%s, total %d byte data\n",new_fd, buf, len);
         char* res ="HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: 14712\r\n\r\n" ;
         write(new_fd, res, strlen(res));
-        FILE * fd1 = fopen("./b.jpg","rb");
+        FILE * fd1 = fopen(pathname,"rb");
         int rlen=0;
         bzero(buf, MAXBUF+1 );
         while (1)
@@ -140,7 +143,7 @@ void* handle_readable_fd(void* parameter)
             pthread_cond_wait (&taskCond, &taskMutex); 
         }else{
             int fd = task[myjob];
-            headindex =headindex+1/TASKQUEUENUMBER;
+            headindex =(headindex+1)/TASKQUEUENUMBER;
             task[myjob] = 0;
             epoll_ctl(kdpfd, EPOLL_CTL_DEL,fd,&ev);  
             curfds--;  
