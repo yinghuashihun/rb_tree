@@ -8,6 +8,9 @@
 #include"rb_tree.h"
 #include"CacheBuff.h"
 
+RB_TREE_S* g_pstTree = NULL;
+
+
 /* **********************************************************
   * Function Name : writetoBuff
   * Description   : read the file into the cache node
@@ -332,6 +335,19 @@ void CacheTreeBuild(RB_TREE_S *pstTree, char * pcPathname)
     }
     closedir(pdir);
 }
+
+RB_TREE_S* GetCacheTree()
+{
+   return g_pstTree;
+}
+
+void SetCacheTree(RB_TREE_S *pstTree)
+{
+   g_pstTree = pstTree;
+
+   return;
+}
+
 
 /* **********************************************************
   * Function Name : CacheTreeInit

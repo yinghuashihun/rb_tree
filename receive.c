@@ -23,20 +23,6 @@
 #define PORT 5000
 #define THREADNUMBER 5
 
-RB_TREE_S* g_pstTree = NULL;
-
-RB_TREE_S* GetCacheTree()
-{
-   return g_pstTree;
-}
-
-void SetCacheTree(RB_TREE_S *pstTree)
-{
-   g_pstTree = pstTree;
-
-   return;
-}
-
 int findpathend(char* buf)
 {
     int position = 0;
@@ -333,7 +319,7 @@ int main(int argc, char **argv)
          }  
     }  
     close(listener); 
-    if (NULL != g_pstTree)
+    if (NULL != pstTree)
     {
         CacheTreeDeInit(pstTree);
         SetCacheTree(NULL);
