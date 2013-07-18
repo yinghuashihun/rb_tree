@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "rb_tree.h"
 
@@ -224,7 +225,7 @@ static void rb_Erase_Rebalance(RB_NODE_S *pstNode, RB_NODE_S *pstParent, RB_TREE
     RB_NODE_S *pstOther_Right = NULL;
 
     while (((NULL == pstNode) || (BLACK == pstNode->enColor)) && 
-           (pstNode != pstTree))
+           (pstNode != pstTree->pstRoot))
     {
         if (pstParent->pstLeft == pstNode)
         {

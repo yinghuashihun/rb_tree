@@ -19,7 +19,7 @@ RB_TREE_S* g_pstTree = NULL;
   * Return        :
 
 ********************************************************* */
-unsigned int writetoBuff(char* pcPathName, CACHE_NODE_S* pstCacheNode)
+unsigned int writetoBuff(const char* pcPathName, CACHE_NODE_S* pstCacheNode)
 {
    unsigned int uiRet = FAILED;
    FILE *pFileDes = fopen(pcPathName, "rb");
@@ -109,7 +109,7 @@ void cacheNodeFree(RB_NODE_S *pstKey)
   * Return        :
 
 ********************************************************* */
-CACHE_NODE_S* cacheNodeCreate(char* pcPathName, unsigned int uiFileSize)
+CACHE_NODE_S* cacheNodeCreate(const char* pcPathName, unsigned int uiFileSize)
 {
    CACHE_NODE_S *pstCacheNode = NULL;
    unsigned int uiRet = SUCCESS;
@@ -181,7 +181,7 @@ CACHE_NODE_S* CacheNodeFind(RB_TREE_S *pstTree, char* pcPathName)
     pstRbNode = RB_Search(&(stCacheNode.stRbNode), pstTree);
     if (NULL == pstRbNode)
     {
-       return FAILED;
+       return NULL;
     }
     
     pstCache = RB_ENTRY(pstRbNode, CACHE_NODE_S, stRbNode);
