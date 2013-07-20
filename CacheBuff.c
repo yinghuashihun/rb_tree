@@ -1,12 +1,12 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<dirent.h>
-#include<string.h>
-#include<unistd.h>
-#include<sys/stat.h>
-#include<sys/types.h>
-#include"rb_tree.h"
-#include"CacheBuff.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <dirent.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include "rb_tree.h"
+#include "CacheBuff.h"
 
 RB_TREE_S* g_pstTree = NULL;
 
@@ -359,7 +359,7 @@ void SetCacheTree(RB_TREE_S *pstTree)
 ********************************************************* */
 void CacheTreeInit()
 {
-    RB_TREE_S *pstTree= NULL;
+    RB_TREE_S *pstTree = NULL;
 
     pstTree = CacheTreeCreate();
 

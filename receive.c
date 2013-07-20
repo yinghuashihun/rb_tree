@@ -147,10 +147,16 @@ void* handle_readable_fd(void* parameter)
     {
         pthread_mutex_lock(&taskMutex); 
         int myjob = headindex;
-        if(headindex >= tailindx && 0 == task[myjob])
+
+        /* the queue is null and the task is null */
+        if(headindex == tailindx && 0 == task[myjob])
         {
+            /* block the thread */
             pthread_cond_wait (&taskCond, &taskMutex); 
-        }else{
+        }
+        else
+        {
+            /*  */
             int fd = task[myjob];
             headindex =(headindex+1)/TASKQUEUENUMBER;
             task[myjob] = 0;
@@ -195,7 +201,7 @@ int main(int argc, char **argv)
         printf("set system resouce parameter sucessful !\n");  
     } 
 
-    /* 创建socket */
+    /* create socket for listenning other connect request */
     if ((listener = socket(AF_INET, SOCK_STREAM, 0)) == -1)  
     {  
         perror("socket");  
@@ -238,7 +244,9 @@ int main(int argc, char **argv)
 
     /* 创建epoll */
     kdpfd = epoll_create(MAXEPOLLSIZE);
-    len = sizeof(struct sockaddr_in);  
+    len = sizeof(struct sockaddr_in);
+
+    /* should take care of other event */
     ev.events = EPOLLIN | EPOLLET;  
     ev.data.fd = listener;
 
@@ -253,10 +261,10 @@ int main(int argc, char **argv)
     }
     curfds = 1; 
     
-    
+    /* create 5 process */ 
     initPthread();
-    
 
+    /* Init a Red/Back Tree to cache the file */
     CacheTreeInit();
     pstTree = GetCacheTree();
 
@@ -264,6 +272,8 @@ int main(int argc, char **argv)
     {
        return;
     }
+
+    /* Add the all file into the tree */
     CacheTreeBuild(pstTree, "/opt/apache-tomcat-6.0.36/webapps/website");
 
     while (1)   
@@ -276,6 +286,7 @@ int main(int argc, char **argv)
         }    
         for (n = 0; n < nfds; ++n)  
         {  
+           /* other client connect to the server */
            if (events[n].data.fd == listener)   
            {  
                 new_fd = accept(listener, (struct sockaddr *) &their_addr,&len);  
@@ -292,7 +303,8 @@ int main(int argc, char **argv)
                 setnonblocking(new_fd);  
                 ev.events = EPOLLIN | EPOLLET;  
                 ev.data.fd = new_fd;
-
+                
+                /* add the new socket into the epoll */
                 if (epoll_ctl(kdpfd, EPOLL_CTL_ADD, new_fd, &ev) < 0)  
                 {  
                     fprintf(stderr, "add socket '%d' join to epoll failed! %s\n",  
@@ -303,8 +315,12 @@ int main(int argc, char **argv)
                 curfds++;  
             }   
             else{  
+
+               /* save the socket for send the data */
                task[tailindx] = events[n].data.fd;
                tailindx =  (tailindx+1)%TASKQUEUENUMBER;
+
+               /* inactive other thread to process the request */
                pthread_cond_broadcast(&taskCond); 
                /*
                ret = handle_message(events[n].data.fd);  
@@ -318,11 +334,15 @@ int main(int argc, char **argv)
             }  
          }  
     }  
+
+    /* release the resources */
     close(listener); 
     if (NULL != pstTree)
     {
         CacheTreeDeInit(pstTree);
         SetCacheTree(NULL);
     }
+
+    /*  there need to add the code to release the resources of thread */
     return 0;  
 }    
